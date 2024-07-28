@@ -15,6 +15,7 @@ add_executable(
     src/mainmenu.c
     src/editor.c
     src/inputbox.c
+    src/button.c
 )
 
 target_link_libraries(${PROJECT_NAME} raylib)

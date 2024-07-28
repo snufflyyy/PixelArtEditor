@@ -1,5 +1,7 @@
 #pragma once
 
+void resizeMainMenu();
+
 void createMainMenu();
 
 void updateMainMenu();

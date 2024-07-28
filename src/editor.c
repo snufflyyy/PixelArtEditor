@@ -1,57 +1,58 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 
 #include <raylib.h>
 
+#include "button.h"
 #include "editor.h"
 #include "inputbox.h"
 #include "pixel.h"
+
+// colors
+const Color panelColor = {100, 100, 100, 50};
+
+const Color buttonColor = {100, 100, 100, 50};
+const Color buttonHoverColor = {100, 100, 100, 75};
+const Color buttonClickedColor = {100, 100, 100, 100};
+const Color buttonIconColor = {100, 100, 100, 150};
+
+const Color colorInputBoxColor = {100, 100, 100, 50};
+const Color colorInputBoxHoverColor = {100, 100, 100, 75};
+const Color colorInputBoxSelectedColor = {100, 100, 100, 100};
+const Color colorInputBoxTextColor = {100, 100, 100, 150};
+
+float padding;
 
 Rectangle framesBackgroundPanel;
 Rectangle canvasBackgroundPanel;
 Rectangle colorPickerBackgroundPanel;
 
-Rectangle addFrameButton;
-Texture2D addFramePlusIcon;
-
 float canvasBackgroundRoundness;
-float colorPickerBackgroundRoundness; // this one is also used for the frames background
+float sizePanelBackgroundRoundness;
 
-// now calculated based on screen size :)
-float padding;
+Button addFrameButton;
 
 int numberOfFrames;
-int canvasSize;
-
 int currentFrame;
-Pixel ***canvasPixels; // never thought i see the day where triple pointers
-                       // are used for something that isn't retarded! :O
-
-// calculated in the resizeEditor function and is based on size of canvas
+int canvasSize;
+Pixel ***canvasPixels;
 float pixelSize;
 
-Rectangle colorPickerPreview;
-
 Color currentColor = WHITE;
+
+Rectangle colorPickerPreview;
 
 Font robotoFont;
 
 ColorInputBox *selectedColorInputBox;
-
 ColorInputBox redInputBox;
 ColorInputBox greenInputBox;
 ColorInputBox blueInputBox;
 float colorInputBoxFontSize;
 
-Rectangle favoriteColorButton;
-Texture2D favoriteIcon;
-
-Rectangle applyColorButton;
-Texture2D applyColorIcon;
-
-Rectangle colorPickerSeparatorLine;
+Button favoriteColorButton;
+Button applyColorButton;
 
 void createFrame() {
     numberOfFrames++;
@@ -83,17 +84,17 @@ void createEditor(int size) {
 
     robotoFont = LoadFont("assets/fonts/roboto/Roboto-Bold.ttf");
 
+    addFrameButton = createButton(LoadTexture("assets/icons/plus.png"));
+    favoriteColorButton = createButton(LoadTexture("assets/icons/star.png"));
+    applyColorButton = createButton(LoadTexture("assets/icons/check.png"));
+
+    createFrame();
+
     // color input boxes
     redInputBox = createColorInputBox();
     greenInputBox = createColorInputBox();
     blueInputBox = createColorInputBox();
 
-    // textures
-    addFramePlusIcon = LoadTexture("assets/icons/plus.png");
-    favoriteIcon = LoadTexture("assets/icons/star.png");
-    applyColorIcon = LoadTexture("assets/icons/check.png");
-
-    createFrame();
     resizeEditor();
 }
 
@@ -101,6 +102,7 @@ void resizeEditor() {
     // padding
     padding = (float) (GetScreenWidth() + GetScreenHeight()) / 200;
 
+    // background panels
     framesBackgroundPanel.width = ((float) (GetScreenWidth() - GetScreenHeight()) / 2) - padding;
     framesBackgroundPanel.height = GetScreenHeight() - padding * 2;
     framesBackgroundPanel.x = padding;
@@ -127,9 +129,14 @@ void resizeEditor() {
                                 (2 * radius / canvasBackgroundPanel.height) :
                                 (2 * radius / canvasBackgroundPanel.width);
 
-    colorPickerBackgroundRoundness = (colorPickerBackgroundPanel.width > colorPickerBackgroundPanel.height) ?
+    sizePanelBackgroundRoundness = (colorPickerBackgroundPanel.width > colorPickerBackgroundPanel.height) ?
                                      (2 * radius / colorPickerBackgroundPanel.height) :
                                      (2 * radius / colorPickerBackgroundPanel.width);
+
+    // add frame button
+    setButtonSize(&addFrameButton, framesBackgroundPanel.width - padding * 4, framesBackgroundPanel.height / 35);
+    setButtonPosition(&addFrameButton, framesBackgroundPanel.x + padding * 2, framesBackgroundPanel.y + framesBackgroundPanel.height - padding * 2 - addFrameButton.box.height);
+    resizeButtonIcon(&addFrameButton, padding);
 
     // canvas
     pixelSize = (GetScreenHeight() - padding * 6) / canvasSize;
@@ -150,76 +157,69 @@ void resizeEditor() {
     colorPickerPreview.x = colorPickerBackgroundPanel.x + padding * 2;
     colorPickerPreview.y = colorPickerBackgroundPanel.y + padding * 2;
 
-    // color input boxes font size
-    colorInputBoxFontSize = (float) (colorPickerBackgroundPanel.width + colorPickerBackgroundPanel.height) / 40;
+    Vector2 colorInputBoxesSize = {(colorPickerBackgroundPanel.width - padding * 6) / 3, colorPickerBackgroundPanel.height / 35};
+    float colorInputBoxesYPosition = colorPickerPreview.y + colorPickerPreview.height + padding;
+
+    colorInputBoxFontSize = (colorInputBoxesSize.x + colorInputBoxesSize.y) / 4;
 
     // color input boxes
-    redInputBox.box.width = (colorPickerPreview.width - padding * 2) / 3;
-    redInputBox.box.height = colorPickerPreview.height / 8; // magic bullshit
-    redInputBox.box.x = colorPickerPreview.x;
-    redInputBox.box.y = colorPickerPreview.y + colorPickerPreview.height + padding * 2;
+    setColorInputBoxSize(&redInputBox, colorInputBoxesSize.x, colorInputBoxesSize.y);
+    setColorInputBoxPosition(&redInputBox, colorPickerPreview.x, colorInputBoxesYPosition);
 
-    greenInputBox.box.width = redInputBox.box.width;
-    greenInputBox.box.height = redInputBox.box.height;
-    greenInputBox.box.x = colorPickerPreview.x + greenInputBox.box.width + padding;
-    greenInputBox.box.y = colorPickerPreview.y + colorPickerPreview.height + padding * 2;
+    setColorInputBoxSize(&greenInputBox, colorInputBoxesSize.x, colorInputBoxesSize.y);
+    setColorInputBoxPosition(&greenInputBox, colorPickerPreview.x + redInputBox.box.width + padding, colorInputBoxesYPosition);
 
-    blueInputBox.box.width = greenInputBox.box.width;
-    blueInputBox.box.height = greenInputBox.box.height;
-    blueInputBox.box.x = colorPickerPreview.x + greenInputBox.box.width * 2 + padding * 2;
-    blueInputBox.box.y = colorPickerPreview.y + colorPickerPreview.height + padding * 2;
+    setColorInputBoxSize(&blueInputBox, colorInputBoxesSize.x, colorInputBoxesSize.y);
+    setColorInputBoxPosition(&blueInputBox, colorPickerPreview.x + (greenInputBox.box.width + padding) * 2, colorInputBoxesYPosition);
 
-    favoriteColorButton.width = (colorPickerPreview.width / 2) - padding / 2;
-    favoriteColorButton.height = colorPickerBackgroundPanel.height / 35;
-    favoriteColorButton.x = redInputBox.box.x;
-    favoriteColorButton.y = redInputBox.box.y + redInputBox.box.height + padding * 2;
+    // favorite button
+    setButtonSize(&favoriteColorButton, (colorPickerBackgroundPanel.width - padding * 5) / 2, colorPickerBackgroundPanel.height / 35);
+    setButtonPosition(&favoriteColorButton, colorPickerPreview.x, redInputBox.box.y + redInputBox.box.height + padding);
+    resizeButtonIcon(&favoriteColorButton, padding);
 
-    applyColorButton.width = (colorPickerPreview.width / 2) - padding / 2;
-    applyColorButton.height = colorPickerBackgroundPanel.height / 35;
-    applyColorButton.x = favoriteColorButton.x + favoriteColorButton.width + padding;
-    applyColorButton.y = favoriteColorButton.y;
-
-    colorPickerSeparatorLine.width = colorPickerPreview.width;
-    colorPickerSeparatorLine.height = colorPickerBackgroundPanel.height / 200;
-    colorPickerSeparatorLine.x = favoriteColorButton.x;
-    colorPickerSeparatorLine.y = favoriteColorButton.y + favoriteColorButton.height + padding * 2;
-
-    // add frame button
-    addFrameButton.width = framesBackgroundPanel.width - padding * 4;
-    addFrameButton.height = framesBackgroundPanel.height / 35; // magic bullshit
-    addFrameButton.x = framesBackgroundPanel.x + padding * 2;
-    addFrameButton.y = framesBackgroundPanel.y + framesBackgroundPanel.height - padding * 2 - addFrameButton.height;
-
-    // add frame plus icon
-    addFramePlusIcon.width = addFrameButton.height - addFrameButton.height / 5; // magic bullshit
-    addFramePlusIcon.height = addFramePlusIcon.width;
+    // apply button
+    setButtonSize(&applyColorButton, (colorPickerBackgroundPanel.width - padding * 5) / 2, colorPickerBackgroundPanel.height / 35);
+    setButtonPosition(&applyColorButton, colorPickerPreview.x + favoriteColorButton.box.width + padding, redInputBox.box.y + redInputBox.box.height + padding);
+    resizeButtonIcon(&applyColorButton, padding);
 }
 
 void updateEditor() {
     if (selectedColorInputBox != NULL) {
-        getColorInputBoxInput(selectedColorInputBox);
+        getInputColorInputBoxInput(selectedColorInputBox);
     }
 
-    // frames panel & color picker panel
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        redInputBox.isActive = false;
-        greenInputBox.isActive = false;
-        blueInputBox.isActive = false;
+    // buttons
+    if (CheckCollisionPointRec(GetMousePosition(), framesBackgroundPanel)) {
+        updateButton(&addFrameButton);
 
-        if (CheckCollisionPointRec(GetMousePosition(), framesBackgroundPanel)) {
-            if (CheckCollisionPointRec(GetMousePosition(), addFrameButton)) {
-                createFrame();
-            }
+        if (isButtonClicked(addFrameButton)) {
+            createFrame();
         }
+    }
 
-        if (CheckCollisionPointRec(GetMousePosition(), colorPickerBackgroundPanel)) {
-            if (CheckCollisionPointRec(GetMousePosition(), redInputBox.box)) {
-                redInputBox.isActive = true;
-            } else if (CheckCollisionPointRec(GetMousePosition(), greenInputBox.box)) {
-                greenInputBox.isActive = true;
-            } else if (CheckCollisionPointRec(GetMousePosition(), blueInputBox.box)) {
-                blueInputBox.isActive = true;
+    if (CheckCollisionPointRec(GetMousePosition(), colorPickerBackgroundPanel)) {
+        updateColorInputBox(&redInputBox);
+        updateColorInputBox(&greenInputBox);
+        updateColorInputBox(&blueInputBox);
+
+        updateButton(&favoriteColorButton);
+        updateButton(&applyColorButton);
+
+        // for the color input boxes
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            if (selectedColorInputBox != NULL) {
+                selectedColorInputBox->selected = false;
+            }
+
+            if (isColorInputBoxClicked(&redInputBox)) {
+                selectedColorInputBox = &redInputBox;
+            } else if (isColorInputBoxClicked(&greenInputBox)) {
+                selectedColorInputBox = &greenInputBox;
+            } else if (isColorInputBoxClicked(&blueInputBox)) {
+                selectedColorInputBox = &blueInputBox;
             } else {
+                selectedColorInputBox = NULL;
+
                 SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
                 int redColor = atoi(redInputBox.text);
@@ -237,16 +237,6 @@ void updateEditor() {
                 }
             }
         }
-    }
-
-    if (redInputBox.isActive) {
-        selectedColorInputBox = &redInputBox;
-    } else if (greenInputBox.isActive) {
-        selectedColorInputBox = &greenInputBox;
-    } else if (blueInputBox.isActive) {
-        selectedColorInputBox = &blueInputBox;
-    } else {
-        selectedColorInputBox = NULL;
     }
 
     // canvas panel
@@ -268,29 +258,13 @@ void updateEditor() {
 }
 
 void renderEditor() {
-    DrawRectangleRounded(framesBackgroundPanel, colorPickerBackgroundRoundness, 10, (Color) {100, 100, 100, 50});
-    DrawRectangleRounded(canvasBackgroundPanel, canvasBackgroundRoundness, 10, (Color) {100, 100, 100, 50});
-    DrawRectangleRounded(colorPickerBackgroundPanel, colorPickerBackgroundRoundness, 10, (Color) {100, 100, 100, 50});
-
-    // magic number (fix later!)
-    DrawRectangleRounded(colorPickerPreview, 0.1f, 10, currentColor);
-
-    renderColorInputBox(redInputBox, robotoFont, colorInputBoxFontSize, (Color) {100, 100, 100, 50}, (Color) {100, 100, 100, 150});
-    renderColorInputBox(greenInputBox, robotoFont, colorInputBoxFontSize, (Color) {100, 100, 100, 50}, (Color) {100, 100, 100, 150});
-    renderColorInputBox(blueInputBox, robotoFont, colorInputBoxFontSize, (Color) {100, 100, 100, 50}, (Color) {100, 100, 100, 150});
-
-    if (selectedColorInputBox != NULL) {
-        DrawRectangleRoundedLinesEx(selectedColorInputBox->box, 1, 10, 2, (Color) {100, 100, 100, 150});
-    }
-
-    DrawRectangleRounded(favoriteColorButton, 1, 10, (Color) {100, 100, 100, 50});
-    DrawRectangleRounded(applyColorButton, 1, 10, (Color) {100, 100, 100, 50});
-
-    DrawRectangleRounded(colorPickerSeparatorLine, 1, 10, (Color) {100, 100, 100, 50});
+    // background panels
+    DrawRectangleRounded(framesBackgroundPanel, sizePanelBackgroundRoundness, 10, panelColor);
+    DrawRectangleRounded(canvasBackgroundPanel, canvasBackgroundRoundness, 10, panelColor);
+    DrawRectangleRounded(colorPickerBackgroundPanel, sizePanelBackgroundRoundness, 10, panelColor);
 
     // add frame button
-    DrawRectangleRounded(addFrameButton, 1, 10, (Color) {100, 100, 100, 50});
-    DrawTextureV(addFramePlusIcon, (Vector2) {addFrameButton.x + addFrameButton.width / 2 - (float) addFramePlusIcon.width / 2, addFrameButton.y + addFrameButton.height / 2 - (float) addFramePlusIcon.height / 2}, (Color) {100, 100, 100, 150});
+    renderButton(addFrameButton, 1, buttonColor,buttonHoverColor, buttonClickedColor, buttonIconColor);
 
     // canvas
     for (int x = 0; x < canvasSize; x++) {
@@ -298,11 +272,24 @@ void renderEditor() {
             DrawRectangleV(canvasPixels[currentFrame][x][y].position, (Vector2) {pixelSize, pixelSize}, canvasPixels[currentFrame][x][y].color);
         }
     }
+
+    // color picker box thing | magic number (fix later!)
+    DrawRectangleRounded(colorPickerPreview, 0.1f, 10, currentColor);
+
+    renderColorInputBox(redInputBox, robotoFont, colorInputBoxFontSize, colorInputBoxColor, colorInputBoxHoverColor, colorInputBoxSelectedColor, colorInputBoxTextColor);
+    renderColorInputBox(greenInputBox, robotoFont, colorInputBoxFontSize, colorInputBoxColor, colorInputBoxHoverColor, colorInputBoxSelectedColor, colorInputBoxTextColor);
+    renderColorInputBox(blueInputBox, robotoFont, colorInputBoxFontSize, colorInputBoxColor, colorInputBoxHoverColor, colorInputBoxSelectedColor, colorInputBoxTextColor);
+
+    renderButton(favoriteColorButton, 1, buttonColor, buttonHoverColor, buttonClickedColor, buttonIconColor);
+    renderButton(applyColorButton, 1, buttonColor, buttonHoverColor, buttonClickedColor, buttonIconColor);
 }
 
 void destoryEditor() {
+    free(canvasPixels);
     canvasPixels = NULL;
+
+    free(selectedColorInputBox);
     selectedColorInputBox = NULL;
 
-    UnloadTexture(addFramePlusIcon);
+    UnloadTexture(addFrameButton.icon);
 }

@@ -9,7 +9,7 @@ ApplicationState applicationState;
 void resizeApplication() {
     switch (applicationState) {
         case MAINMENU:
-            //createMainMenu();
+            resizeMainMenu();
             break;
         case EDITOR:
             resizeEditor();
@@ -23,10 +23,10 @@ void createApplication() {
 
     switch (applicationState) {
         case MAINMENU:
-            //createMainMenu();
+            createMainMenu();
             break;
         case EDITOR:
-            createEditor(16); // debug
+            createEditor(32); // debug
             break;
     }
 }
@@ -38,7 +38,7 @@ void updateApplication() {
 
     switch (applicationState) {
         case MAINMENU:
-            //updateMainMenu();
+            updateMainMenu();
             break;
         case EDITOR:
             updateEditor();
@@ -51,7 +51,7 @@ void renderApplication() {
 
     switch (applicationState) {
         case MAINMENU:
-            //renderMainMenu();
+            renderMainMenu();
             break;
         case EDITOR:
             renderEditor();
@@ -62,7 +62,7 @@ void renderApplication() {
 void destroyApplication() {
     switch (applicationState) {
         case MAINMENU:
-            //destroyMainMenu();
+            destroyMainMenu();
             break;
         case EDITOR:
             destoryEditor();

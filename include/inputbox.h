@@ -4,13 +4,21 @@
 
 typedef struct {
     Rectangle box;
-    bool isActive;
     char text[4]; // it is 4 bc of null terminator
     int numberCount;
+
+    bool hovered;
+    bool selected;
 } ColorInputBox;
 
 ColorInputBox createColorInputBox();
 
-void getColorInputBoxInput(ColorInputBox* inputBox);
+void setColorInputBoxSize(ColorInputBox *inputBox, float width, float height);
+void setColorInputBoxPosition(ColorInputBox *inputBox, float x, float y);
 
-void renderColorInputBox(ColorInputBox inputBox, Font font, int fontSize, Color buttonColor, Color textColor);
+bool isColorInputBoxClicked(ColorInputBox *inputBox);
+
+void getInputColorInputBoxInput(ColorInputBox* inputBox);
+
+void updateColorInputBox(ColorInputBox *inputBox);
+void renderColorInputBox(ColorInputBox inputBox, Font font, int fontSize, Color inputBoxColor, Color inputBoxHoverColor, Color inputBoxSelectedColor, Color textColor);
