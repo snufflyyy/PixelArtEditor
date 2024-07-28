@@ -6,6 +6,7 @@ add_subdirectory(external/raylib)
 include_directories(
     include
     external/raylib/include
+    external/gif-h/include
 )
 
 add_executable(

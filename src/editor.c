@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -118,7 +119,7 @@ void resizeEditor() {
     colorPickerBackgroundPanel.x = (float) GetScreenWidth() - colorPickerBackgroundPanel.width - padding;
     colorPickerBackgroundPanel.y = (float) GetScreenHeight() / 2 - colorPickerBackgroundPanel.height / 2;
 
-    // borders
+    // borders (i wanna rewrite like all of the border stuff)
     // thank u chatgpt for this crazy math shit i dont know how to do!
     float smallestDimension = fmin(fmin(canvasBackgroundPanel.width, canvasBackgroundPanel.height),
                                    fmin(colorPickerBackgroundPanel.width, colorPickerBackgroundPanel.height));
@@ -130,8 +131,8 @@ void resizeEditor() {
                                 (2 * radius / canvasBackgroundPanel.width);
 
     sizePanelBackgroundRoundness = (colorPickerBackgroundPanel.width > colorPickerBackgroundPanel.height) ?
-                                     (2 * radius / colorPickerBackgroundPanel.height) :
-                                     (2 * radius / colorPickerBackgroundPanel.width);
+                                   (2 * radius / colorPickerBackgroundPanel.height) :
+                                   (2 * radius / colorPickerBackgroundPanel.width);
 
     // add frame button
     setButtonSize(&addFrameButton, framesBackgroundPanel.width - padding * 4, framesBackgroundPanel.height / 35);
